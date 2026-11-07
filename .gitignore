@@ -219,7 +219,7 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-   data/
-   *.csv
-   *.pkl
-   *.pt
+data/
+*.csv
+*.pkl
+*.pt
