@@ -1,1 +1,6 @@
 # dependencies
+fastapi
+pydantic>=2
+requests
+streamlit
+uvicorn
