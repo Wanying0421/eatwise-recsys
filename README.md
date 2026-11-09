@@ -9,13 +9,15 @@ It implements the model from:
 
 Instead of optimizing clicks or ratings, EatWise optimizes **the nutrition the user actually eats**:
 
-- each recipe has an **enrichment** score (health value, anchored to its nutrition) and a **temptation** score (instant appeal, learned from behaviour);
-- the user always has an **outside option**: their usual cheat meal (takeaway, snacks…);
+- each recipe has an **enrichment** score u_j(i): how good it is for the user's diet goal (from nutrition data versus the user's goal profile);
+- each recipe has a **temptation** score v_j(i): how appealing it is regardless of health (learned from the user's choices);
+- the user always has an **outside option**: their usual cheat meal (takeaway, snacks, skipping the plan);
 - recipes are ranked by the **expected enrichment consumed** (Theorem 1 of the paper):
 
 ```
-E[u_j(i | o)] = Φ((C_j(i) − μ) / σ) · u_j(i) + (1 − Φ((C_j(i) − μ) / σ)) · E[u_j(o)]
-C_j(i)        = λC_j · u_j(i) + (1 − λC_j) · v_j(i)
+C_j(i)              = λC · u_j(i) + (1 − λC) · v_j(i)
+P(user chooses i)   = Φ((C_j(i) − μ) / σ)
+score(i)            = P(user chooses i) · u_j(i) + (1 − P(user chooses i)) · E[u_j(outside option)]
 ```
 
 ---
@@ -37,7 +39,7 @@ C_j(i)        = λC_j · u_j(i) + (1 − λC_j) · v_j(i)
 | Week | Milestone | Status |
 |---|---|---|
 | 1 | Project plan, repo skeleton, interfaces agreed |  Done |
-| 2 | Data pipeline on full dataset · model forward pass · eval harness on mock predictions · API returns mock recommendations |  In progress |
+| 2 | Data pipeline on full dataset · model forward pass · eval harness on mock predictions · API returns mock recommendations | ⏳ In progress |
 | 3 | Trained model · beats random & most-popular · ablation · live end-to-end system |  To do |
 | 4 | Showcase: demo, poster, pitch |  To do |
 
@@ -57,18 +59,24 @@ eatwise-recsys/
 │   └── processed/            # cleaned recipes, ratings, consumption rounds
 ├── models/                   # trained artifacts, not committed
 └── src/
+    ├── __init__.py
     ├── data/                 # [DE]  cleaning, health score, SQLite database
+    │   ├── __init__.py
     │   ├── preprocess.py
     │   └── db.py
     ├── model/                # [MLE] enrichment/temptation model, Algorithm 1, greedy rule
+    │   ├── __init__.py
     │   ├── model.py
     │   ├── simulate_clicks.py
     │   ├── train.py
     │   └── predict.py
     ├── eval/                 # [PL]  splits, NDCG@10, Recall@20, baselines, ablation, simulation
+    │   ├── __init__.py
+    │   ├── metrics.py
     │   ├── run_eval.py
     │   └── run_simulation.py
     └── app/                  # [SE]  FastAPI backend + Streamlit frontend
+        ├── __init__.py
         ├── api.py
         └── streamlit_app.py
 ```
@@ -133,11 +141,11 @@ V1 dataset: [Food.com – Recipes and Reviews](https://www.kaggle.com/datasets/i
 2. Build the processed data:
 
 ```bash
-python -m src.data.preprocess         # clean recipes, compute health score, keep users with ≥ 25 ratings
+python -m src.data.preprocess         # clean recipes, compute goal-based nutrition scores, keep users with ≥ 25 ratings
 python -m src.model.simulate_clicks   # build consumption rounds with 15-item shown sets
 ```
 
-The health score (enrichment anchor) is a simplified Nutri-Score in [0, 1]: points for fiber and protein, penalties for calories, saturated fat, sugar and sodium, min-max scaled.
+The nutrition score h_j(i) in [0, 1] anchors enrichment: points for fiber and protein, penalties for calories, saturated fat, sugar and sodium, with weights that depend on the user's diet goal (weight loss, muscle gain, low sodium, balanced). Food.com users have no stated goal and use the balanced profile.
 
 ---
 
@@ -160,7 +168,7 @@ python -m src.eval.run_simulation   # overall individual enrichment, baselines a
 
 - **Split:** temporal 70 / 15 / 15 (train / validation / test). Test data is never used for training, embeddings or tuning.
 - **Ranking metrics:** NDCG@10 and Recall@20 on test-period ratings ≥ 4.
-- **Paper metric:** overall individual enrichment over 50 simulated rounds after a 25-round random warm-up.
+- **Paper metric:** overall individual enrichment = total enrichment a user receives from consumption (on-platform and outside options) over 50 simulated rounds after a 25-round random warm-up.
 - **Baselines:** random, most-popular, enrichment-only, temptation-only, ratings-based, click-based.
 - **Ablation:** temptation switched off (λC = 1) and outside option ignored.
 
