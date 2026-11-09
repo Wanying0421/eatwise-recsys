@@ -1,4 +1,4 @@
-# EatWise 🥗
+# EatWise
 
 **A temptation-aware healthy-eating recommender.**
 EatWise recommends home-cooked recipes that are healthier than what you would otherwise eat, *and* tempting enough that you will actually cook them instead of ordering a pizza.
