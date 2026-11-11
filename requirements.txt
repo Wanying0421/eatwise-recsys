@@ -7,3 +7,9 @@ fastapi>=0.95.0
 uvicorn>=0.20.0
 streamlit>=1.20.0
 matplotlib>=3.7.0
+# dependencies
+fastapi
+pydantic>=2
+requests
+streamlit
+uvicorn
