@@ -162,9 +162,13 @@ Adam optimizer with early stopping on validation loss; we report results over se
 ## Evaluation
 
 ```bash
-python -m src.eval.run_eval         # NDCG@10, Recall@20 vs random and most-popular
-python -m src.eval.run_simulation   # overall individual enrichment, baselines and ablation (5 seeds)
+python -m src.eval.run_eval                                       # fake data, random and most-popular baselines
+python -m src.eval.run_eval --ratings data/processed/ratings.csv  # real ratings
+python -m src.eval.run_eval --predictions preds.json              # score a model's rankings
+python -m src.eval.run_simulation                                 # overall individual enrichment, baselines and ablation (5 seeds)
 ```
+
+`--ratings` expects a CSV with `user_id, recipe_id, rating, timestamp`. `--predictions` expects JSON `{"user_id": ["recipe_id", ...]}`, ranked best first. `run_simulation` is planned for Week 3.
 
 - **Split:** temporal 70 / 15 / 15 (train / validation / test). Test data is never used for training, embeddings or tuning.
 - **Ranking metrics:** NDCG@10 and Recall@20 on test-period ratings ≥ 4.
@@ -220,5 +224,5 @@ events(user_id, session_id, ts, shown_recipe_ids, chosen_recipe_id | 'outside_op
 ## Contributing
 
 - Work on a branch, open a pull request, and get one review before merging into `main`.
-- Run `pytest` before pushing.
+- Run `python src/eval/metrics.py` (self-checks) and your module's checks before pushing.
 - Never commit raw data or large model files (`data/`, `models/` are in `.gitignore`).
